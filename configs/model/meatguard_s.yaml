@@ -1,0 +1,9 @@
+name: "MeatGuard-S"
+params:
+  stage1_channels: 64
+  stage2_channels: 128
+  stage3_dim: 256
+  stage3_heads: 4
+  stage4_channels: 384
+  head_dropout: 0.3
+num_classes: 2
