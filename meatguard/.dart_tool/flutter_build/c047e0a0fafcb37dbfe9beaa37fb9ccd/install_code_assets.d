@@ -1,0 +1,1 @@
+ C:\\elpi_dev\\meatguard\\meatguard\\meatguard\\.dart_tool\\flutter_build\\c047e0a0fafcb37dbfe9beaa37fb9ccd\\native_assets.json: 

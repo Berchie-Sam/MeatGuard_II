@@ -5,14 +5,23 @@ import 'package:flutter/widgets.dart';
 class Assets {
   Assets._();
 
-  static const $AssetsAssetsGen assets = $AssetsAssetsGen();
+  static const String meatguardSFloat16 =
+      'lib/assets/models/meatguard_s_float16.tflite';
+  static const String meatguardSFloat32 =
+      'lib/assets/models/meatguard_s_float32.tflite';
+  static const $AssetsLibGen lib = $AssetsLibGen();
+}
+
+class $AssetsLibGen {
+  const $AssetsLibGen();
+
+  final $AssetsAssetsGen assets = const $AssetsAssetsGen();
 }
 
 class $AssetsAssetsGen {
   const $AssetsAssetsGen();
 
   final $AssetsImagesGen images = const $AssetsImagesGen();
-  final $AssetsModelsGen models = const $AssetsModelsGen();
 }
 
 class $AssetsImagesGen {
@@ -29,15 +38,6 @@ class $AssetsImagesGen {
   final AssetGenImage meatguard = const AssetGenImage(
     'lib/assets/images/meatguard.png',
   );
-}
-
-class $AssetsModelsGen {
-  const $AssetsModelsGen();
-
-  final String meatguardSFloat16 =
-      'lib/assets/models/meatguard_s_float16.tflite';
-  final String meatguardSFloat32 =
-      'lib/assets/models/meatguard_s_float32.tflite';
 }
 
 class AssetGenImage {

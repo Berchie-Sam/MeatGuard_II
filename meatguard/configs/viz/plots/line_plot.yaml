@@ -1,0 +1,7 @@
+# Line Plot Configuration
+plot_type: "line"
+smooth_window: 5
+log_scale_y: false
+show_legend: true
+marker_style: "o"
+grid_style: "dashed"

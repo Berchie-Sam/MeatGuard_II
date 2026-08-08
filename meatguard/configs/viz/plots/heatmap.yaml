@@ -1,0 +1,6 @@
+# Heatmap / Grad-CAM Configuration
+plot_type: "heatmap"
+colormap: "jet" # Options: jet, viridis, magma
+alpha: 0.5
+interpolation: "bilinear"
+show_colorbar: true

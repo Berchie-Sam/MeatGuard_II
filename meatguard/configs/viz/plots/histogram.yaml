@@ -1,0 +1,6 @@
+# Histogram Configuration
+plot_type: "histogram"
+bins: 30
+normalization: "density"
+edge_color: "white"
+show_mean_line: true

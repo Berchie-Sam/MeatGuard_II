@@ -1,0 +1,8 @@
+# Academic Blue Style Preset
+palette: "deep"
+primary_color: "#003366"
+secondary_color: "#B0C4DE"
+font: "Arial"
+grid: true
+line_width: 2
+marker_size: 6
