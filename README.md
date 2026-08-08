@@ -128,6 +128,7 @@ python src/main.py --config configs/config.yaml --mode training
 
 The data at `D:\Research_Work\MeatGuard\data\test` is only a placeholder, make sure it is replaced by the actual path to the full dataset. Switch to the full MeatScan dataset by changing `configs/data/` pointer.
 
+
 ---
 
 ## Model

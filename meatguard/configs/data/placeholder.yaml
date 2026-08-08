@@ -1,4 +1,0 @@
-path: "D:/Research_Work/MeatGuard/data/test"
-class_names: ["Fresh_CowMeat", "Spoiled_CowMeat"]
-split: [0.70, 0.15, 0.15]
-stratified: true
