@@ -61,4 +61,8 @@ logs/
 .log
 
 # Folder for temporary files
-temp/
+temp/.venv-viz/
+
+# Training runs and downloaded pretrained weights
+runs/
+artifacts/weights/

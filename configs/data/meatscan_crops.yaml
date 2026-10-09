@@ -1,0 +1,4 @@
+# SAM-masked MeatScan cropped to the meat region (src/data/segment_meat.py) — primary dataset.
+path: "E:/Datasets/full/crops"
+split_file: "E:/Datasets/full/sessions.csv"
+class_names: ["Fresh_CowMeat", "Spoiled_CowMeat"]

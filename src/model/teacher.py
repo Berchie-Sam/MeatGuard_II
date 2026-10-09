@@ -122,3 +122,67 @@ class MobileViTS(nn.Module):
         is run up to ``[:-2]`` = (Conv, BN, SiLU, GAP, Flatten).
         """
         return self.head[:-2](self.features(x))
+
+
+# ---------------------------------------------------------------------------
+# ImageNet-pretrained teachers (torchvision) for knowledge distillation.
+# The Project-1 MobileViTS above (0.16 M params) is smaller than MeatGuard-S and was trained on a
+# random image-level split, so it is kept only for reference; teachers are retrained on the session split.
+# ---------------------------------------------------------------------------
+from torchvision import models as tvm
+
+TEACHER_ARCHS = {
+    # name: (constructor, weights enum)
+    "efficientnet_b0": (tvm.efficientnet_b0, tvm.EfficientNet_B0_Weights.IMAGENET1K_V1),
+    "convnext_tiny": (tvm.convnext_tiny, tvm.ConvNeXt_Tiny_Weights.IMAGENET1K_V1),
+    "swin_t": (tvm.swin_t, tvm.Swin_T_Weights.IMAGENET1K_V1),
+    "resnet50": (tvm.resnet50, tvm.ResNet50_Weights.IMAGENET1K_V2),
+}
+
+
+def _last_linear(module):
+    """(parent, attribute name, layer) of the last nn.Linear in the module tree."""
+    found = None
+    for name, child in module.named_modules():
+        if isinstance(child, nn.Linear):
+            found = name
+    parent_name, _, attr = found.rpartition(".")
+    parent = module.get_submodule(parent_name) if parent_name else module
+    return parent, attr, getattr(parent, attr)
+
+
+class ImageNetTeacher(nn.Module):
+    """torchvision backbone whose final linear layer is replaced by a new `num_classes` head.
+
+    `penultimate_features(x)` returns the input of that head (the pooled representation), which is the
+    target of the KD feature-alignment loss in `KDTrainer`.
+    """
+    def __init__(self, arch, num_classes=2, pretrained=True):
+        super().__init__()
+        if arch not in TEACHER_ARCHS:
+            raise ValueError(f"Unknown teacher '{arch}'. Choose from {sorted(TEACHER_ARCHS)}")
+        ctor, weights = TEACHER_ARCHS[arch]
+        self.arch = arch
+        self.body = ctor(weights=weights if pretrained else None)
+        parent, attr, last = _last_linear(self.body)
+        setattr(parent, attr, nn.Identity())
+        self.fc = nn.Linear(last.in_features, num_classes)
+
+    def penultimate_features(self, x):
+        return self.body(x)
+
+    def forward(self, x):
+        return self.fc(self.body(x))
+
+
+def build_teacher(arch, num_classes=2, pretrained=True):
+    return ImageNetTeacher(arch, num_classes=num_classes, pretrained=pretrained)
+
+
+def load_teacher(checkpoint_path, map_location="cpu"):
+    """Rebuild a trained teacher from a checkpoint written by `src/train_teacher.py` (eval mode)."""
+    ckpt = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
+    meta = ckpt["meta"]
+    model = ImageNetTeacher(meta["arch"], num_classes=len(meta["class_names"]), pretrained=False)
+    model.load_state_dict(ckpt["model_state_dict"])
+    return model.eval(), meta

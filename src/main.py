@@ -28,7 +28,8 @@ def main():
     train_loader, val_loader, test_loader, class_weights = make_loaders(
         data_cfg['path'], 
         strategy=cm.get('augment'), 
-        batch_size=cm.get('training')['batch_size']
+        batch_size=cm.get('training')['batch_size'],
+        split_file=data_cfg.get('split_file', 'auto'),
     )
 
     # 4. Model Setup

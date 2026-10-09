@@ -4,7 +4,7 @@ device: "cuda"
 seed: 42
 
 # --- Module Selection (Pointers to other YAMLs) ---
-data: "placeholder"             # configs/data/placeholder.yaml
+data: "meatscan_crops"          # configs/data/meatscan_crops.yaml
 architecture: "meatguard_s"      # configs/model/meatguard_s.yaml
 augment: "domain"               # configs/train/augment/domain.yaml
 

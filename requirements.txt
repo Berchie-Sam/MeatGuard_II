@@ -10,6 +10,7 @@
 # ── Core ML Framework ──────────────────────────────────────────────────────
 torch>=2.1.0
 torchvision>=0.16.0
+torch-pruning>=1.5.0                       # structured channel pruning (DepGraph)
 
 # ── Numerical & Image Processing ───────────────────────────────────────────
 numpy>=1.24.0
