@@ -1,5 +1,5 @@
 # MeatGuard II
-### Explainable Lightweight AI for Real-Time Cow Meat Freshness Detection on Edge Devices
+### MeatGuard-S: An Explainable Lightweight Deep Neural Network for Beef Freshness Classification on Smartphones
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](requirements.txt)
@@ -249,11 +249,10 @@ If you use this work in your research, please cite:
 
 ```bibtex
 @article{meatguard2026,
-  title={MeatGuard: An Explainable Lightweight Hybrid CNN-Transformer Model
-         for Real-Time Cow Meat Freshness Detection on Smartphone and
-         Raspberry Pi Devices in Low-Resource African Markets},
+  title={MeatGuard-S: An Explainable Lightweight Deep Neural Network for Beef
+         Freshness Classification on Smartphones},
   author={Gyening, R.-M. O. M. and others},
-  journal={Expert Systems with Applications},
+  journal={Computers and Electronics in Agriculture},
   year={2026},
   publisher={Elsevier}
 }
