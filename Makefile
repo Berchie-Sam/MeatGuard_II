@@ -1,38 +1,89 @@
+# MeatGuard II pipeline. Every target calls src/main.py, which reads configs/config.yaml.
+#
+#   make                 # teacher -> baselines -> scratch -> distill -> compress -> export -> evaluate -> xai -> collect
+#   make distill         # one step (and the steps it needs, if their results are missing)
+#   make smoke           # whole pipeline with three batches per step, results in $(RUNS)_smoke/
+#   make PYTHON=D:/RGT/Code/rgtenv/Scripts/python.exe RUNS=runs_local
+#
+# Each step's target is the summary file it writes last, so make skips steps that have finished. Training
+# steps also resume from their last checkpoint when interrupted. Data preparation (sessions, segment) is
+# run once, explicitly.
 
-# MeatGuard II Automation Makefile
-# Note: This uses a simple shell wrapper for Python calls
+PYTHON ?= python
+CONFIG ?= configs/config.yaml
+RUNS   ?= runs
+MAIN    = $(PYTHON) -m src.main --config $(CONFIG) --runs $(RUNS)
 
-SHELL := powershell
-PYTHON := python
+TEACHER   = $(RUNS)/teacher/teacher_selection.json
+SCRATCH   = $(RUNS)/student/scratch/summary.json
+DISTILLED = $(RUNS)/student/distilled/summary.json
+PRUNED    = $(RUNS)/student/pruned/summary.json
+EXPORTED  = $(RUNS)/student/export/summary.json
+RESULTS   = $(RUNS)/results/test_results.json
+XAI       = $(RUNS)/xai/xai_summary.json
 
-# Default target
-all: setup train distill compress export
+.PHONY: all data sessions segment teacher baselines scratch distill compress export evaluate xai collect \
+        smoke dry-run setup clean help
+
+all: collect
+
+help:
+	$(PYTHON) -m src.main --help
 
 setup:
-	@echo "Setting up environment..."
-	# In a real scenario, we would run pip install -r requirements.txt
-	mkdir -p artifacts/models artifacts/plots
+	$(PYTHON) -m pip install -r requirements.txt
 
-train:
-	@echo "Running Supervised Training..."
-	$(PYTHON) src/main.py --config configs/config.yaml --mode training
+# ---- data preparation (local, once) --------------------------------------------------------------
+data: sessions segment
+sessions:
+	$(MAIN) --mode sessions
+segment:
+	$(MAIN) --mode segment
 
-distill: train
-	@echo "Running Knowledge Distillation..."
-	$(PYTHON) src/main.py --config configs/config.yaml --mode distill
+# ---- training -------------------------------------------------------------------------------------
+teacher: $(TEACHER)
+$(TEACHER):
+	$(MAIN) --mode teacher
 
-compress: distill
-	@echo "Running Pruning and Quantization..."
-	$(PYTHON) src/main.py --config configsLconfig.yaml --mode compress
+# baselines re-run quickly when finished (each run resumes, sees it is complete, and stops)
+baselines: $(TEACHER)
+	$(MAIN) --mode baselines
 
-export: compress
-	@echo "Exporting to TFLite/ONNX..."
-	$(PYTHON) src/main.py --config configs/config.yaml --mode export
+scratch: $(SCRATCH)
+$(SCRATCH):
+	$(MAIN) --mode scratch
 
-test:
-	@echo "Running parity and unit tests..."
-	pytest tests/
+distill: $(DISTILLED)
+$(DISTILLED): $(TEACHER)
+	$(MAIN) --mode distill
 
+compress: $(PRUNED)
+$(PRUNED): $(DISTILLED)
+	$(MAIN) --mode compress
+
+export: $(EXPORTED)
+$(EXPORTED): $(PRUNED)
+	$(MAIN) --mode export
+
+# ---- evaluation -----------------------------------------------------------------------------------
+evaluate: $(RESULTS)
+$(RESULTS): $(EXPORTED) $(SCRATCH) | baselines
+	$(MAIN) --mode evaluate
+
+xai: $(XAI)
+$(XAI): $(PRUNED)
+	$(MAIN) --mode xai
+
+collect: $(RESULTS) $(XAI)
+	$(MAIN) --mode collect
+
+# ---- checks ---------------------------------------------------------------------------------------
+smoke:
+	$(MAIN) --mode all --smoke
+
+dry-run:
+	$(MAIN) --mode all --dry-run
+
+# Removes the smoke-test results only; delete $(RUNS)/ by hand if you really want to discard real results.
 clean:
-	Remove-Item -Recurse -Force artifacts/
-
+	$(PYTHON) -c "import shutil; shutil.rmtree('$(RUNS)_smoke', ignore_errors=True)"

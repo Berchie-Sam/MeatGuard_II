@@ -1,24 +1,62 @@
-# MeatGuard II Master Config
-mode: "training"                # Options: training, fine_tuning, inference, export
-device: "cuda"
+# MeatGuard II Master Config — read by src/main.py (and the Makefile, which calls it)
+mode: "all"                     # Options: sessions, segment, teacher, baselines, scratch, distill, compress,
+                                #          export, evaluate, xai, collect, all (= teacher ... collect)
+device: "auto"                  # auto | cuda | cpu
 seed: 42
+num_workers: 4
+runs_dir: "runs"                # all results are written here
 
 # --- Module Selection (Pointers to other YAMLs) ---
 data: "placeholder"             # configs/data/placeholder.yaml
 architecture: "meatguard_s"      # configs/model/meatguard_s.yaml
 augment: "domain"               # configs/train/augment/domain.yaml
 
-# --- Global Training Overrides ---
+# --- Teacher candidates (selected on validation macro-F1) ---
+teacher:
+  archs: ["efficientnet_b0", "convnext_tiny", "swin_t", "resnet50"]
+  epochs: 30
+  batch_size: 64
+  lr: 3e-4
+  weight_decay: 0.05
+  warmup_epochs: 2
+  label_smoothing: 0.1
+  patience: 8
+
+# --- Lightweight comparison models (teacher recipe, saved under runs/baselines/) ---
+baselines: ["mobilenet_v3_small", "shufflenet_v2_x1_0", "efficientnet_b0"]
+
+# --- MeatGuard-S training (distillation and the no-KD ablation) ---
 training:
   batch_size: 32
   epochs: 100
   lr: 1e-3
   weight_decay: 1e-4
+  warmup_epochs: 5
+  patience: 15
 
-# --- Export Configuration ---
+distillation:
+  alpha: 0.3                    # weight of the label cross-entropy
+  temperature: 4.0
+  beta: 0.1                     # weight of the feature-alignment loss
+
+# --- Compression and export ---
+compression:
+  amount: 0.3                   # share of prunable channels removed
+  epochs: 10                    # fine-tuning
+  lr: 1e-4
+  weight_decay: 1e-4
+
 export:
-  format: "tflite_int8"         # Options: pth, onnx, tflite_fp32, tflite_int8
-  output_path: "artifacts/models/meatguard_s_int8.tflite"
+  calibration_images: 500       # training images used to calibrate INT8 quantisation
+
+# --- Evaluation of the explanations ---
+xai:
+  val_per_class: 50             # Grad-CAM layer selection
+  test_per_class: 100           # 0 = all test images
+  per_session: 2
+  shap_background: 50
+  shap_samples: 100
+  sanity_images: 20
 
 # --- Visualization Master Switchboard ---
 visualization:

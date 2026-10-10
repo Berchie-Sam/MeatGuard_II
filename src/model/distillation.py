@@ -7,11 +7,11 @@ class KDLoss(nn.Module):
     Knowledge Distillation Loss.
     L_total = alpha * CE(student, labels) + (1-alpha) * KL(student_soft, teacher_soft)
     """
-    def __init__(self, alpha=0.3, temperature=4.0):
+    def __init__(self, alpha=0.3, temperature=4.0, class_weights=None):
         super().__init__()
         self.alpha = alpha
         self.temperature = temperature
-        self.ce_loss = nn.CrossEntropyLoss()
+        self.ce_loss = nn.CrossEntropyLoss(weight=class_weights)
         self.kl_loss = nn.KLDivLoss(reduction='batchmean')
 
     def forward(self, student_logits, teacher_logits, labels):

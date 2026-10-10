@@ -1,0 +1,7 @@
+# SAM-masked MeatScan cropped to the meat region (src/data/segment_meat.py) — primary dataset.
+source: "E:/Datasets/MeatScan"          # raw images (input of the sessions and segment steps)
+root: "E:/Datasets/full"                # prepared data: sessions.csv, masks/, masked/, crops/
+path: "E:/Datasets/full/crops"          # model input
+split_file: "E:/Datasets/full/sessions.csv"
+masks: "E:/Datasets/full/masks"
+class_names: ["Fresh_CowMeat", "Spoiled_CowMeat"]

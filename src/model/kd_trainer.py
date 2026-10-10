@@ -9,7 +9,8 @@ class KDTrainer:
     """
     Knowledge Distillation Trainer for MeatGuard-S.
     """
-    def __init__(self, student, teacher, train_loader, val_loader, optimizer, device="cuda"):
+    def __init__(self, student, teacher, train_loader, val_loader, optimizer, device="cuda",
+                 alpha=0.3, temperature=4.0, class_weights=None):
         self.student = student.to(device)
         # Ensure teacher is a model instance, not just a state_dict
         if isinstance(teacher, dict):
@@ -25,7 +26,7 @@ class KDTrainer:
         self.optimizer = optimizer
         self.device = device
         
-        self.kd_loss_fn = KDLoss()
+        self.kd_loss_fn = KDLoss(alpha=alpha, temperature=temperature, class_weights=class_weights)
         self.align_loss_fn = FeatureAlignmentLoss()
 
         # Feature alignment projects the student's Stage-3 descriptor onto the teacher's
@@ -55,37 +56,47 @@ class KDTrainer:
             self.adaptor = nn.Linear(in_dim, out_dim).to(self.device)
             self.optimizer.add_param_group({"params": self.adaptor.parameters()})
 
+    @torch.no_grad()
+    def init_adaptor(self, images):
+        """Build the alignment adaptor from one batch. Call this before creating an LR scheduler, so the
+        adaptor's parameter group is scheduled with the student's."""
+        if not self.align_enabled or self.adaptor is not None:
+            return
+        images = images.to(self.device)
+        s = self._pool(self.student.stage3_output(images))
+        t = self._pool(self._get_teacher_features(images))
+        self._ensure_adaptor(s.size(1), t.size(1))
+
+    def compute_loss(self, images, labels, beta=0.1):
+        """Distillation loss for one batch: Eq. (5) = alpha*CE + (1-alpha)*T^2*KL + beta*alignment.
+        Returns (total, {"kd": ..., "align": ...}) with the parts as floats for logging."""
+        with torch.no_grad():
+            teacher_logits = self.teacher(images)
+            teacher_feat = self._get_teacher_features(images) if self.align_enabled else None
+        student_feat = self.student.stage3_output(images)
+        student_logits = self.student.classifier(self.student.gap(
+            self.student.s4_down(self.student.stage4(student_feat))))
+        loss_kd = self.kd_loss_fn(student_logits, teacher_logits.float(), labels)
+        parts = {"kd": float(loss_kd.detach()), "align": 0.0}
+        total = loss_kd
+        if teacher_feat is not None:
+            s, t = self._pool(student_feat), self._pool(teacher_feat).float()
+            self._ensure_adaptor(s.size(1), t.size(1))
+            loss_align = self.align_loss_fn(self.adaptor(s), t)
+            parts["align"] = float(loss_align.detach())
+            total = loss_kd + beta * loss_align
+        return total, parts
+
     def train_epoch(self, beta=0.1):
         self.student.train()
         total_loss = 0
-        
         for images, labels in self.train_loader:
             images, labels = images.to(self.device), labels.to(self.device)
-            
-            with torch.no_grad():
-                teacher_logits = self.teacher(images)
-                teacher_feat = self._get_teacher_features(images) if self.align_enabled else None
-
             self.optimizer.zero_grad()
-            
-            # Student predictions
-            student_logits = self.student(images)
-            
-            # Loss computation
-            loss_kd = self.kd_loss_fn(student_logits, teacher_logits, labels)
-            total_loss_val = loss_kd
-            if teacher_feat is not None:
-                student_feat = self._pool(self._get_student_stage3(images))
-                teacher_feat = self._pool(teacher_feat)
-                self._ensure_adaptor(student_feat.size(1), teacher_feat.size(1))
-                loss_align = self.align_loss_fn(self.adaptor(student_feat), teacher_feat)
-                total_loss_val = loss_kd + beta * loss_align
-            
-            total_loss_val.backward()
+            loss, _ = self.compute_loss(images, labels, beta)
+            loss.backward()
             self.optimizer.step()
-            
-            total_loss += total_loss_val.item()
-            
+            total_loss += loss.item()
         return total_loss / len(self.train_loader)
 
     def _get_student_stage3(self, x):
