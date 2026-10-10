@@ -45,7 +45,7 @@ Raspberry Pi deployment and an in-field user study are future work.
 
 ---
 
-## Architecture
+## Framework (Workflow) of the study
 
 ```mermaid
 flowchart TD
