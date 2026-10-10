@@ -1,4 +1,5 @@
 import warnings
+from pathlib import Path
 
 import torch
 import torch.nn as nn
@@ -13,12 +14,12 @@ class KDTrainer:
                  alpha=0.3, temperature=4.0, class_weights=None):
         self.student = student.to(device)
         # Ensure teacher is a model instance, not just a state_dict
-        if isinstance(teacher, dict):
-            from .architecture import MeatGuardS # Example teacher; should match actual teacher arch
-            self.teacher = MeatGuardS() 
-            self.teacher.load_state_dict(teacher)
-        else:
-            self.teacher = teacher
+        if isinstance(teacher, (str, Path)):   # checkpoint written by src/train_teacher.py
+            from .teacher import load_teacher
+            teacher, _ = load_teacher(teacher, map_location=device)
+        elif isinstance(teacher, dict):
+            raise TypeError("Pass a teacher model or a train_teacher.py checkpoint path, not a bare state_dict.")
+        self.teacher = teacher
             
         self.teacher.to(device).eval()
         self.train_loader = train_loader
@@ -35,7 +36,7 @@ class KDTrainer:
         self.adaptor = None
         self.align_enabled = any(
             hasattr(self.teacher, attr)
-            for attr in ("penultimate_features", "stage3_output", "stage1")
+            for attr in ("penultimate_features", "stage3_output")
         )
         if not self.align_enabled:
             warnings.warn(
@@ -46,7 +47,7 @@ class KDTrainer:
 
     def _pool(self, feat):
         # Collapse spatial dims to a per-channel descriptor so alignment is robust
-        # to differing teacher/student spatial resolutions (28x28 vs 7x7).
+        # to differing teacher/student spatial resolutions (14x14 vs 7x7).
         return feat.mean(dim=(2, 3)) if feat.dim() == 4 else feat
 
     def _ensure_adaptor(self, in_dim, out_dim):
@@ -100,22 +101,11 @@ class KDTrainer:
         return total_loss / len(self.train_loader)
 
     def _get_student_stage3(self, x):
-        # Manual pass through student until stage 3
-        x = self.student.stage1(x)
-        x = self.student.stage2(x)
-        x = self.student.s3_proj(x)
-        x = self.student.s3_attn(x)
-        return x
+        return self.student.stage3_output(x)
 
     def _get_teacher_features(self, x):
         if hasattr(self.teacher, 'penultimate_features'):
             return self.teacher.penultimate_features(x)
         if hasattr(self.teacher, 'stage3_output'):
             return self.teacher.stage3_output(x)
-        if hasattr(self.teacher, 'stage1'):
-            x = self.teacher.stage1(x)
-            x = self.teacher.stage2(x)
-            x = self.teacher.s3_proj(x)
-            x = self.teacher.s3_attn(x)
-            return x
         return None

@@ -7,12 +7,12 @@ evaluated once, for the selected teacher, by the `select` command.
 
 Usage (from the repository root):
     # 1. train each candidate (resumable; writes runs/teacher/<arch>/)
-    python -m src.train_teacher train --arch efficientnet_b0 --data E:/Datasets/full/crops
-    python -m src.train_teacher train --arch convnext_tiny   --data E:/Datasets/full/crops
+    python -m src.train_teacher train --arch efficientnet_b0 --data data/processed/full/crops
+    python -m src.train_teacher train --arch convnext_tiny   --data data/processed/full/crops
     # 2. pick the best on validation macro-F1, then evaluate it once on test
-    python -m src.train_teacher select --data E:/Datasets/full/crops
+    python -m src.train_teacher select --data data/processed/full/crops
     # lightweight baselines use the same recipe in their own folder (never candidates for selection)
-    python -m src.train_teacher train --arch mobilenet_v3_small --data E:/Datasets/full/crops --out runs/baselines
+    python -m src.train_teacher train --arch mobilenet_v3_small --data data/processed/full/crops --out runs/baselines
 
 The split file defaults to <data>/../sessions.csv (see src/data/sessions.py).
 """

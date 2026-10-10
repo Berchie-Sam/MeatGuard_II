@@ -75,10 +75,36 @@ class CompactMHSA(nn.Module):
         # Back to (B, C, H, W)
         return out.transpose(1, 2).reshape(B, C, H, W)
 
+class ChannelLayerNorm(nn.Module):
+    """LayerNorm over the channel dimension of a (B, C, H, W) map."""
+    def __init__(self, ch):
+        super().__init__()
+        self.norm = nn.LayerNorm(ch)
+
+    def forward(self, x):
+        return self.norm(x.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
+
+class TransformerBlock(nn.Module):
+    """Pre-norm transformer block on a feature map: x + MHSA(LN(x)), then x + FFN(LN(x)).
+
+    The FFN uses 1x1 convolutions so the block stays on (B, C, H, W) tensors end to end.
+    """
+    def __init__(self, dim, heads=4, mlp_ratio=2):
+        super().__init__()
+        hidden = dim * mlp_ratio
+        self.norm1 = ChannelLayerNorm(dim)
+        self.attn = CompactMHSA(dim, heads)
+        self.norm2 = ChannelLayerNorm(dim)
+        self.ffn = nn.Sequential(nn.Conv2d(dim, hidden, 1), nn.SiLU(), nn.Conv2d(hidden, dim, 1))
+
+    def forward(self, x):
+        x = x + self.attn(self.norm1(x))
+        return x + self.ffn(self.norm2(x))
+
 class MeatGuardS(nn.Module):
     """
     MeatGuard-S: Hybrid CNN-Transformer Architecture.
-    ~3.4M parameters.
+    ~1.14M parameters, ~0.38 GMACs at 224x224 (measured; the original ~3.4M was a planning estimate).
     """
     def __init__(self, num_classes=2):
         super().__init__()
@@ -96,32 +122,29 @@ class MeatGuardS(nn.Module):
             nn.SiLU()
         ) # Output: 56x56x64
 
-        # Stage 2: Inverted Residual blocks (Texture hierarchy)
+        # Stage 2: Inverted Residual blocks (Texture hierarchy). Downsampling in the first block and
+        # expansion 2 keep the stage at 28x28 and cut its cost ~2x (profiled 2026-10-09).
         self.stage2 = nn.Sequential(
-            InvertedResidualBlock(64, 64, stride=1),
-            InvertedResidualBlock(64, 128, stride=2),
-            InvertedResidualBlock(128, 128, stride=1)
+            InvertedResidualBlock(64, 128, stride=2, expand_ratio=2),
+            InvertedResidualBlock(128, 128, stride=1, expand_ratio=2),
+            InvertedResidualBlock(128, 128, stride=1, expand_ratio=2)
         ) # Output: 28x28x128
 
-        # Stage 3: Compact MHSA (Global relations)
-        self.stage3 = CompactMHSA(dim=128, heads=4) 
-        # Note: Blueprint suggests d=256. If d=256 is needed, add a projection here.
-        # We'll keep it at 128 to match Stage 2 for simplicity, or add a 1x1 conv.
+        # Stage 3: project to d=256, downsample, then a transformer block (Global relations).
+        # Attention runs at 14x14 = 196 tokens; at 28x28 it would cost ~16x more.
         self.s3_proj = nn.Sequential(
             nn.Conv2d(128, 256, 1, bias=False),
             nn.BatchNorm2d(256),
             nn.SiLU()
         )
-        self.s3_attn = CompactMHSA(dim=256, heads=4) 
-        # Output: 28x28x256. Blueprint says 14x14x256.
-        # We need a downsample here.
         self.s3_down = nn.MaxPool2d(2) # 28 -> 14
+        self.s3_attn = TransformerBlock(dim=256, heads=4) # Output: 14x14x256
 
         # Stage 4: MV2 Block + SE Attention (Channel refinement)
         self.stage4 = nn.Sequential(
-            InvertedResidualBlock(256, 384, stride=1),
+            InvertedResidualBlock(256, 384, stride=1, expand_ratio=2),
             SEBlock(384)
-        ) # Output: 14x14x384. Blueprint says 7x7x384.
+        ) # Output: 14x14x384
         self.s4_down = nn.MaxPool2d(2) # 14 -> 7
 
         # Head
@@ -132,30 +155,18 @@ class MeatGuardS(nn.Module):
             nn.Linear(384, num_classes)
         )
 
-    def forward(self, x):
+    def stage3_output(self, x):
+        """Stage-3 transformer output (14x14x256); the KD feature-alignment target."""
         x = self.stage1(x)
         x = self.stage2(x)
-        
-        # Stage 3
         x = self.s3_proj(x)
-        x = self.s3_attn(x)
         x = self.s3_down(x)
-        
-        # Stage 4
-        x = self.stage4(x)
-        x = self.s4_down(x)
-        
-        # Head
-        x = self.gap(x)
-        return self.classifier(x)
+        return self.s3_attn(x)
 
     def get_last_conv_layer_output(self, x):
-        """Helper for Grad-CAM: Returns output of Stage 4 before GAP."""
-        x = self.stage1(x)
-        x = self.stage2(x)
-        x = self.s3_proj(x)
-        x = self.s3_attn(x)
-        x = self.s3_down(x)
-        x = self.stage4(x)
-        x = self.s4_down(x)
-        return x
+        """Helper for Grad-CAM: Returns output of Stage 4 before GAP (7x7x384)."""
+        return self.s4_down(self.stage4(self.stage3_output(x)))
+
+    def forward(self, x):
+        x = self.get_last_conv_layer_output(x)
+        return self.classifier(self.gap(x))

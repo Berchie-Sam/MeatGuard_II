@@ -7,7 +7,7 @@ Fig. 2 — MeatGuard-S architecture.
 (b)-(d) Inset diagrams of the inverted residual block, the Stage-3 transformer block and the SE block.
 
 Usage (needs Python >= 3.10 for VisualTorch >= 1.0, e.g. the .venv-viz environment):
-    python -m src.viz.arch_figure --out D:/Research_Work/paperpwork/AI/MeatGuard_II-paper/figures/fig2_architecture.png
+    python -m src.viz.arch_figure --out figures/fig2_architecture.png
 """
 import argparse
 from pathlib import Path

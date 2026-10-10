@@ -40,7 +40,7 @@ from src.model.architecture import MeatGuardS
 from src.train_student import load_student
 
 train_loader, val_loader, test_loader, class_weights = make_loaders(
-    "E:/Datasets/full/crops", strategy="domain", split_file="auto")   # finds E:/Datasets/full/sessions.csv
+    "data/processed/full/crops", strategy="domain", split_file="auto")   # finds data/processed/full/sessions.csv
 model = MeatGuardS(num_classes=2)
 pruned = load_student("runs/student/pruned/best_model.pt")            # whole pruned module
 ```

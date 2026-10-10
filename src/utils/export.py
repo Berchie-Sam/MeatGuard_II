@@ -16,10 +16,13 @@ import torch
 def export_onnx(model, onnx_path, input_shape=(1, 3, 224, 224)):
     """PyTorch -> ONNX (opset 18, dynamic batch), checked with onnx.checker."""
     import onnx
+    import inspect
     model = model.eval().cpu()
+    # Newer PyTorch defaults to the TorchDynamo exporter; the TorchScript exporter is the one onnx2tf is tested with
+    extra = {"dynamo": False} if "dynamo" in inspect.signature(torch.onnx.export).parameters else {}
     torch.onnx.export(model, torch.randn(*input_shape), onnx_path, opset_version=18,
                       input_names=["input"], output_names=["logits"],
-                      dynamic_axes={"input": {0: "batch"}, "logits": {0: "batch"}})
+                      dynamic_axes={"input": {0: "batch"}, "logits": {0: "batch"}}, **extra)
     onnx.checker.check_model(onnx.load(onnx_path))
     print(f"[ONNX] {onnx_path}")
     return onnx_path

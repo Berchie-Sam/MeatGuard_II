@@ -61,13 +61,9 @@ logs/
 .log
 
 # Folder for temporary files
-<<<<<<< Updated upstream
-temp/
-=======
 temp/
 .venv-viz/
 
 # Training runs and downloaded pretrained weights
 runs/
 artifacts/weights/
->>>>>>> Stashed changes

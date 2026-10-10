@@ -1,0 +1,4 @@
+# Original MeatScan images with the session-aware split (src/data/sessions.py)
+path: "data/raw/MeatScan"
+split_file: "data/processed/full/sessions.csv"
+class_names: ["Fresh_CowMeat", "Spoiled_CowMeat"]

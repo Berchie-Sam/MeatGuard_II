@@ -108,12 +108,16 @@ on Google Colab, with the codebase and the data on Google Drive.
 
 ### Data preparation (local, once)
 
+Paths in this README are relative to the repository root: raw images in `data/raw/MeatScan/`, prepared
+data in `data/processed/full/` (both git-ignored). If your data live elsewhere, set the locations in
+`configs/data/meatscan_crops.yaml`, which `src/main.py` and the `Makefile` read.
+
 ```bash
-python -m src.data.sessions     --src E:/Datasets/MeatScan --out E:/Datasets/full/sessions.csv   # session split
-python -m src.data.segment_meat --src E:/Datasets/MeatScan --out E:/Datasets/full               # masks/ masked/ crops/
+python -m src.data.sessions     --src data/raw/MeatScan --out data/processed/full/sessions.csv   # session split
+python -m src.data.segment_meat --src data/raw/MeatScan --out data/processed/full               # masks/ masked/ crops/
 ```
 
-For Colab, zip `crops/`, `masks/` and `sessions.csv` from `E:/Datasets/full` and upload the zip to Drive
+For Colab, zip `crops/`, `masks/` and `sessions.csv` from `data/processed/full` and upload the zip to Drive
 (default `MyDrive/MeatGuard/full.zip`); upload this repository folder to `MyDrive/MeatGuard_II`.
 
 ### Training and evaluation
@@ -126,7 +130,7 @@ For Colab, zip `crops/`, `masks/` and `sessions.csv` from `E:/Datasets/full` and
 | Test evaluation of all models | `03_inference_and_xai` | `python -m src.evaluate --data <crops>` | `runs/results/` |
 | Evaluation of the explanations | `04_xai_faithfulness` | `python -m src.evaluate_xai --data <crops>` | `runs/xai/` |
 
-`<crops>` is `E:/Datasets/full/crops`; `sessions.csv` is found next to it. Run the notebooks in order (01 does not
+`<crops>` is `data/processed/full/crops`; `sessions.csv` is found next to it. Run the notebooks in order (01 does not
 need the teacher). Training runs are resumable, and every command has a `--smoke` option that runs three batches
 to check the setup.
 
@@ -144,7 +148,7 @@ make                                    # teacher -> baselines -> scratch -> dis
 make distill                            # one step (plus any missing prerequisites)
 make smoke                              # whole pipeline, three batches per step, results in runs_smoke/
 make dry-run                            # print the commands only
-make PYTHON=D:/RGT/Code/rgtenv/Scripts/python.exe RUNS=runs_local
+make PYTHON=.venv/Scripts/python.exe RUNS=runs_local
 
 python -m src.main --mode distill       # the same without make
 python -m src.main --mode sessions      # data preparation steps: sessions, segment
@@ -163,9 +167,9 @@ Ghanaian markets. Open access: [Zenodo, doi:10.5281/zenodo.16764338](https://doi
 | Capture sessions | 1,666 (1,012 single images; the largest holds 2,619 images, 53.5% of the spoiled class) |
 | Split (fresh / spoiled) | train 3,939 / 3,423 · val 844 / 734 · test 844 / 734, by session, stratified by class |
 | Leakage check | no validation or test image within dHash distance 6 of a training image |
-| Model input | `E:/Datasets/full/crops/`: 224 × 224 crops of the meat region, background filled with the ImageNet mean colour |
+| Model input | `data/processed/full/crops/`: 224 × 224 crops of the meat region, background filled with the ImageNet mean colour |
 
-Prepared data (`E:/Datasets/full/`): `sessions.csv` (path, class, session, split), `masks/` (binary meat masks),
+Prepared data (`data/processed/full/`): `sessions.csv` (path, class, session, split), `masks/` (binary meat masks),
 `masked/` (background removed), `crops/` (model input) and `segmentation.csv` (detector scores, mask areas and
 fallback flags). The dataset config is selected in `configs/config.yaml` (`data: "meatscan_crops"`).
 

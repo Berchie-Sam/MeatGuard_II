@@ -14,7 +14,7 @@ and writes to runs/results/:
     test_results.csv    the same as a flat table
     predictions.csv     one row per (model, test image): path, session, label, P(spoiled)
 
-Usage:  python -m src.evaluate --data E:/Datasets/full/crops --runs runs
+Usage:  python -m src.evaluate --data data/processed/full/crops --runs runs
 """
 import argparse
 import json

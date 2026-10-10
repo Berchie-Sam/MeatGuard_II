@@ -5,8 +5,8 @@ Uses real MeatScan images: one raw spoiled image with its detector box, SAM mask
 consecutive frames bracketed by capture session and labelled with their partition (from sessions.csv).
 
 Usage:
-    python -m src.viz.pipeline_figure --raw E:/Datasets/MeatScan --full E:/Datasets/full \
-        --out D:/Research_Work/paperpwork/AI/MeatGuard_II-paper/figures/fig1_pipeline.png
+    python -m src.viz.pipeline_figure --raw data/raw/MeatScan --full data/processed/full \
+        --out figures/fig1_pipeline.png
 """
 import argparse
 from pathlib import Path
@@ -172,8 +172,8 @@ def draw_evaluation_band(ax, connect=True):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--raw", default="E:/Datasets/MeatScan")
-    ap.add_argument("--full", default="E:/Datasets/full")
+    ap.add_argument("--raw", default="data/raw/MeatScan")
+    ap.add_argument("--full", default="data/processed/full")
     ap.add_argument("--example", default="Spoiled_CowMeat/Spoiled (1000).jpg")
     ap.add_argument("--frames", default="Fresh_CowMeat", help="class folder for the session strip")
     ap.add_argument("--first-frame", type=int, default=470)

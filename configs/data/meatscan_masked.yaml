@@ -1,0 +1,5 @@
+# SAM-masked MeatScan (src/data/segment_meat.py): background filled with the ImageNet mean.
+# Alternatives in the same folder: crops/ (cropped to the meat), masks/ (binary masks).
+path: "data/processed/full/masked"
+split_file: "data/processed/full/sessions.csv"
+class_names: ["Fresh_CowMeat", "Spoiled_CowMeat"]

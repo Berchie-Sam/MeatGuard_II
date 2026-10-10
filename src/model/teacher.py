@@ -122,8 +122,6 @@ class MobileViTS(nn.Module):
         is run up to ``[:-2]`` = (Conv, BN, SiLU, GAP, Flatten).
         """
         return self.head[:-2](self.features(x))
-<<<<<<< Updated upstream
-=======
 
 
 # ---------------------------------------------------------------------------
@@ -197,4 +195,3 @@ def load_teacher(checkpoint_path, map_location="cpu"):
     model = ImageNetTeacher(meta["arch"], num_classes=len(meta["class_names"]), pretrained=False)
     model.load_state_dict(ckpt["model_state_dict"])
     return model.eval(), meta
->>>>>>> Stashed changes

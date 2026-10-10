@@ -3,7 +3,7 @@
 #   make                 # teacher -> baselines -> scratch -> distill -> compress -> export -> evaluate -> xai -> collect
 #   make distill         # one step (and the steps it needs, if their results are missing)
 #   make smoke           # whole pipeline with three batches per step, results in $(RUNS)_smoke/
-#   make PYTHON=D:/RGT/Code/rgtenv/Scripts/python.exe RUNS=runs_local
+#   make PYTHON=.venv/Scripts/python.exe RUNS=runs_local
 #
 # Each step's target is the summary file it writes last, so make skips steps that have finished. Training
 # steps also resume from their last checkpoint when interrupted. Data preparation (sessions, segment) is

@@ -6,7 +6,7 @@ Shapes follow flowchart convention: rounded box = process, diamond = decision, p
 pill = start/end. Colours follow figure_plan.md (Okabe-Ito, one colour per stage).
 
 Usage:
-    python -m src.viz.flowcharts --out-dir D:/Research_Work/paperpwork/AI/MeatGuard_II-paper/figures/flowcharts
+    python -m src.viz.flowcharts --out-dir figures/flowcharts
 """
 import argparse
 import os

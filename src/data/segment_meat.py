@@ -15,7 +15,7 @@ Outputs under --out (ImageFolder-compatible class sub-folders):
 The run is resumable: images whose mask already exists are skipped.
 
 Usage:
-    python -m src.data.segment_meat --src E:/Datasets/MeatScan --out E:/Datasets/full
+    python -m src.data.segment_meat --src data/raw/MeatScan --out data/processed/full
 """
 import argparse
 import csv

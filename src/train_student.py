@@ -12,10 +12,10 @@ versions and device). Model selection uses the validation split only; test resul
 `python -m src.evaluate`.
 
 Usage (from the repository root):
-    python -m src.train_student distill  --data E:/Datasets/full/crops
-    python -m src.train_student distill  --data E:/Datasets/full/crops --no-kd
-    python -m src.train_student compress --data E:/Datasets/full/crops
-    python -m src.train_student export   --data E:/Datasets/full/crops
+    python -m src.train_student distill  --data data/processed/full/crops
+    python -m src.train_student distill  --data data/processed/full/crops --no-kd
+    python -m src.train_student compress --data data/processed/full/crops
+    python -m src.train_student export   --data data/processed/full/crops
 """
 import argparse
 import csv

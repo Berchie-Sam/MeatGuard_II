@@ -11,7 +11,7 @@ Quantitative evaluation of the explanations (Section 3.6 of the paper).
 Writes to --out (default runs/xai/): layer_selection.json, xai_per_image.csv, sanity_check.csv,
 xai_summary.json (all settings and per-method / per-class means) and example_maps.npz (maps for figures).
 
-Usage:  python -m src.evaluate_xai --data E:/Datasets/full/crops --model runs/student/pruned/best_model.pt
+Usage:  python -m src.evaluate_xai --data data/processed/full/crops --model runs/student/pruned/best_model.pt
 """
 import argparse
 import json
