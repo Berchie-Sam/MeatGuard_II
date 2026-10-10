@@ -102,6 +102,8 @@ pip install -r requirements.txt
 
 ## Running the experiments
 
+Step-by-step instructions, in order, for the Makefile, the Python scripts and the Colab notebooks: [RUNBOOK.md](RUNBOOK.md).
+
 Each step is a script that writes its results under `runs/` (checkpoints, `history.csv`, and `summary.json` with
 the settings, model cost, metrics, GPU and software versions). The notebooks in `notebooks/` drive the same scripts
 on Google Colab, with the codebase and the data on Google Drive.
@@ -241,6 +243,7 @@ MeatGuard_II/
 ├── mobile_app/            # Android application
 ├── artifacts/             # Earlier outputs and downloaded weights
 ├── Makefile               # Pipeline targets (calls src/main.py)
+├── RUNBOOK.md             # How to run the experiment, in order
 └── requirements.txt       # Python dependencies
 ```
 
