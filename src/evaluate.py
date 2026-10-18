@@ -7,7 +7,9 @@ Collects the models found under --runs:
     scratch      runs/student/scratch/best.pt          (MeatGuard-S without distillation)
     distilled    runs/student/distilled/best.pt        (MeatGuard-S)
     pruned       runs/student/pruned/best_model.pt     (pruned + fine-tuned)
-    int8         runs/student/export/*_int8.tflite     (deployed model)
+    int8         runs/student/export/*_int8.tflite     (full-integer INT8 model)
+    deployed     --deployed <file.tflite>               (the TFLite model chosen on validation for the app, e.g. a
+                                                         mixed-precision variant from src.quantize_variants)
 and writes to runs/results/:
     test_results.json   per model: accuracy, macro-F1, spoiled recall, ROC-AUC, confusion matrix, 95% CIs from
                         resampling test sessions, parameters, MACs, file size, CPU latency; McNemar tests
@@ -15,6 +17,8 @@ and writes to runs/results/:
     predictions.csv     one row per (model, test image): path, session, label, P(spoiled)
 
 Usage:  python -m src.evaluate --data data/processed/full/crops --runs runs
+        python -m src.evaluate --data data/processed/full/crops --runs runs
+            --deployed runs/student/export/meatguard_s_int8_mixed.tflite
 """
 import argparse
 import json
@@ -53,7 +57,7 @@ def cpu_latency_ms(model, runs=100, warmup=10, threads=1):
     return float(np.median(times))
 
 
-def find_models(runs):
+def find_models(runs, deployed=None):
     runs, models = Path(runs), {}
     sel = runs / "teacher" / "teacher_selection.json"
     if sel.exists():
@@ -69,6 +73,10 @@ def find_models(runs):
             models[name] = ("torch-student", runs / rel)
     for tfl in sorted((runs / "student" / "export").glob("*_int8.tflite")):
         models["meatguard_s:int8"] = ("tflite", tfl)
+    if deployed:
+        if not Path(deployed).exists():
+            raise FileNotFoundError(f"--deployed model not found: {deployed}")
+        models["meatguard_s:deployed"] = ("tflite", Path(deployed))
     return models
 
 
@@ -81,6 +89,8 @@ def main():
     ap.add_argument("--device", default="auto")
     ap.add_argument("--num-workers", type=int, default=4)
     ap.add_argument("--no-latency", action="store_true")
+    ap.add_argument("--deployed", default=None,
+                    help="TFLite model chosen on validation for the app (evaluated as meatguard_s:deployed)")
     args = ap.parse_args()
 
     device = resolve_device(args.device)
@@ -93,7 +103,7 @@ def main():
     groups = session_groups(test_loader.dataset, data_dir, split_file)
     paths = [Path(p).relative_to(data_dir).as_posix() for p, _ in test_loader.dataset.samples]
 
-    models = find_models(args.runs)
+    models = find_models(args.runs, args.deployed)
     if not models:
         raise FileNotFoundError(f"No trained models under {args.runs}")
     results, preds, y_ref = {}, {}, None
@@ -125,8 +135,10 @@ def main():
     tests = []
     ref = "meatguard_s:distilled"
     pairs = [(ref, other) for other in preds if other != ref] if ref in preds else []
-    if "meatguard_s:pruned" in preds and "meatguard_s:int8" in preds:
-        pairs.append(("meatguard_s:pruned", "meatguard_s:int8"))
+    # Cost of each quantisation step against the pruned FP32 model it was converted from
+    for q in ("meatguard_s:int8", "meatguard_s:deployed"):
+        if "meatguard_s:pruned" in preds and q in preds:
+            pairs.append(("meatguard_s:pruned", q))
     for a, b in pairs:
         tests.append({"a": a, "b": b, **mcnemar_test(y_ref, preds[a].argmax(1), preds[b].argmax(1))})
 

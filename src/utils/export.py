@@ -57,7 +57,17 @@ def export_tflite_int8(model, calibration_loader, out_dir, name="meatguard_s", m
     os.makedirs(out_dir, exist_ok=True)
     onnx_path = export_onnx(model, os.path.join(out_dir, f"{name}.onnx"), input_shape)
     saved_model_dir = os.path.join(out_dir, "saved_model")
-    convert(input_onnx_file_path=onnx_path, output_folder_path=saved_model_dir, non_verbose=True)
+    # onnx2tf 2.x defaults to the flatbuffer_direct backend, which writes .tflite files but no SavedModel;
+    # the TensorFlow converter backend writes the saved_model.pb that the INT8 conversion below loads.
+    # onnx2tf.convert is a (*args, **kwargs) wrapper, so the option is tried rather than looked up;
+    # onnx2tf 1.x has no such option and always writes a SavedModel.
+    kwargs = dict(input_onnx_file_path=onnx_path, output_folder_path=saved_model_dir, non_verbose=True)
+    try:
+        convert(**kwargs, tflite_backend="tf_converter")
+    except TypeError:
+        convert(**kwargs)
+    if not os.path.exists(os.path.join(saved_model_dir, "saved_model.pb")):
+        raise FileNotFoundError(f"onnx2tf wrote no saved_model.pb in {saved_model_dir}")
     print(f"[TF] SavedModel: {saved_model_dir}")
 
     # Read the converted input layout from the float32 TFLite file that onnx2tf writes alongside

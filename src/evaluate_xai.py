@@ -37,20 +37,27 @@ LAYERS = ("stage2", "s3_attn", "stage4")
 
 def stratified_sample(table, split, per_class, per_session, seed):
     """Up to `per_class` images per class from `split`, at most `per_session` per capture session, so that a
-    few large sessions do not dominate the sample."""
+    few large sessions do not dominate the sample. With a specimen-level split file, whose `session` column
+    holds specimen groups, the cap applies to the capture sessions (`capture_session`) within them."""
     rng = np.random.default_rng(seed)
+    col = "capture_session" if "capture_session" in table.columns else "session"
     rows = []
     for cls, part in table[table["split"] == split].groupby("class"):
         picked = []
-        sessions = part["session"].unique()
+        sessions = part[col].unique()
         rng.shuffle(sessions)
         for s in sessions:
-            frames = part[part["session"] == s]
+            frames = part[part[col] == s]
             picked.append(frames.sample(min(per_session, len(frames)), random_state=int(rng.integers(1 << 31))))
             if sum(map(len, picked)) >= per_class:
                 break
-        rows.append(pd.concat(picked).head(per_class))
-    return pd.concat(rows).reset_index(drop=True)
+        part = pd.concat(picked).head(per_class).reset_index(drop=True)
+        rows.append(part.assign(_rank=np.arange(len(part)), _cls=len(rows)))
+    # Interleave the classes (fresh, spoiled, fresh, ...), so that the first images (sanity check, example maps)
+    # cover both. An explicit sort: the earlier MultiIndex swaplevel/sort_index did not interleave under every
+    # pandas version.
+    return (pd.concat(rows).sort_values(["_rank", "_cls"], kind="stable")
+            .drop(columns=["_rank", "_cls"]).reset_index(drop=True))
 
 
 class Explainers:
@@ -147,6 +154,8 @@ def main():
     # ---- 2. Test evaluation
     test = (table[table["split"] == "test"].reset_index(drop=True) if args.test_per_class == 0 else
             stratified_sample(table, "test", args.test_per_class, args.per_session, args.seed))
+    print(f"test sample: {len(test)} images, {test['session'].nunique()} sessions; classes of the first 10: "
+          f"{test['class'].head(10).tolist()}")
     background = None
     if not args.no_shap:
         bg = table[table["split"] == "train"].sample(args.shap_background, random_state=args.seed)["path"]
@@ -166,6 +175,9 @@ def main():
                 "random_deletion_auc": random_order_auc(model, x, cls, "deletion", repeats=args.random_repeats),
                 "random_insertion_auc": random_order_auc(model, x, cls, "insertion", repeats=args.random_repeats)}
         for name, explain in methods.items():
+            # SHAP samples randomly: reseed per image and method so each map is reproducible on its own,
+            # independent of the sample order (src.xai_examples recomputes the maps the same way)
+            seed_everything(args.seed)
             a = np.asarray(explain(x, cls), dtype=np.float32)
             rows.append({**base, "method": name, **faithfulness(model, x, a, cls), **meat_share(a, mask)})
             if i < 16:

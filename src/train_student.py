@@ -148,6 +148,12 @@ def distill(args):
         state = torch.load(last_path, map_location=device, weights_only=False)
         if state["meta"]["split_sha256"] != meta["split_sha256"]:
             raise ValueError("Checkpoint was trained on a different split file; use --restart.")
+        # A resumed run must keep the recipe: e.g. more --epochs would stretch the schedule of a finished run
+        # and continue it from its last epoch instead of training from the start
+        changed = {k: (v, cfg[k]) for k, v in state["meta"]["config"].items() if k != "num_workers" and cfg.get(k) != v}
+        if changed:
+            raise ValueError(f"Checkpoint was trained with other settings {changed} (old, new); use --restart "
+                             "or another --out.")
         student.load_state_dict(state["model_state_dict"])
         if kd is not None and state.get("adaptor_state_dict"):
             kd.adaptor.load_state_dict(state["adaptor_state_dict"])
