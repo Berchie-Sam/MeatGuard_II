@@ -88,7 +88,8 @@ def figure(records, path, dpi):
         ax = axes[r, 0]
         ax.imshow(img)
         ax.contour(mask, levels=[0.5], colors=mask_colour, linewidths=0.8)
-        ax.set_ylabel(f"{CLASS_NAME[rec['label']]}\nP = {rec['confidence']:.2f}", color=ink, fontsize=7)
+        ax.set_ylabel(rec.get("row_label", f"{CLASS_NAME[rec['label']]}\nP = {rec['confidence']:.2f}"),
+                      color=ink, fontsize=7)
         for c, (key, name) in enumerate(METHODS, start=1):
             ax = axes[r, c]
             a = np.clip(rec[key], 0, None)
