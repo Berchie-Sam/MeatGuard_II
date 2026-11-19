@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Camera photos go to cache/camera/ and are deleted when the next photo is taken. -->
+    <cache-path name="camera" path="camera/" />
+</paths>

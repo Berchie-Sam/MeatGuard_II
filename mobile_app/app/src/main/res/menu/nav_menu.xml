@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_saved_reports"
+        android:icon="@drawable/ic_baseline_history_24"
+        android:title="Saved Reports" />
+    <item
+        android:id="@+id/nav_contact_support"
+        android:icon="@drawable/ic_baseline_help_24"
+        android:title="Support" />
+    <item
+        android:id="@+id/nav_about_us"
+        android:icon="@drawable/ic_baseline_info_24"
+        android:title="About" />
+</menu>

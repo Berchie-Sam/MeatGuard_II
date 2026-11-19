@@ -1,0 +1,23 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Light theme only: the layouts use fixed light backgrounds and dark text. -->
+    <style name="Base.Theme.MeatGuard" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/brown_primary</item>
+        <item name="colorPrimaryVariant">@color/brown_primary_dark</item>
+        <item name="colorOnPrimary">@color/on_brown_primary</item>
+        <item name="colorSecondary">@color/brown_secondary</item>
+        <item name="colorSecondaryVariant">@color/brown_primary_dark</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="android:statusBarColor">@color/brown_primary_dark</item>
+        <item name="colorPrimaryContainer">@color/brown_primary_container</item>
+        <item name="colorSecondaryContainer">@color/brown_accent</item>
+    </style>
+
+    <style name="Theme.MeatGuard" parent="Base.Theme.MeatGuard" />
+
+    <!-- Crop screen (image-cropper library): needs an action bar, which holds its "Crop" button. -->
+    <style name="Theme.MeatGuard.Crop" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/brown_primary</item>
+        <item name="colorPrimaryDark">@color/brown_primary_dark</item>
+        <item name="colorAccent">@color/brown_primary</item>
+    </style>
+</resources>

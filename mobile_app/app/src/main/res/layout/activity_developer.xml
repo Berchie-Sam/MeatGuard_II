@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F5F5"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/brown_primary"
+        app:titleTextColor="@color/white" />
+
+    <ScrollView
+        android:id="@+id/scroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/folders_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/black"
+                android:textIsSelectable="true"
+                android:textSize="12sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Execution settings"
+                android:textColor="@color/brown_primary"
+                android:textStyle="bold" />
+
+            <CheckBox
+                android:id="@+id/check_cpu1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="CPU, 1 thread (XNNPACK)" />
+
+            <CheckBox
+                android:id="@+id/check_cpu4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="CPU, 4 threads (XNNPACK) - used by the app and by batch / end-to-end" />
+
+            <CheckBox
+                android:id="@+id/check_nnapi"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="NNAPI delegate" />
+
+            <CheckBox
+                android:id="@+id/check_gpu"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="GPU delegate" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/edit_warmup"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Warm-up runs"
+                    android:inputType="number"
+                    android:text="20" />
+
+                <EditText
+                    android:id="@+id/edit_runs"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Timed runs"
+                    android:inputType="number"
+                    android:text="200" />
+
+                <EditText
+                    android:id="@+id/edit_pause"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Pause (s)"
+                    android:inputType="number"
+                    android:text="30" />
+
+                <EditText
+                    android:id="@+id/edit_photos"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Photos"
+                    android:inputType="number"
+                    android:text="50" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Warm-up runs · timed runs · pause between settings (s) · photos for end-to-end"
+                android:textSize="11sp" />
+
+            <Button
+                android:id="@+id/button_latency"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="1. Latency benchmark (model call)" />
+
+            <Button
+                android:id="@+id/button_endtoend"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="2. End-to-end timing (eval/camera, else eval/photos)" />
+
+            <Button
+                android:id="@+id/button_batch_a"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="3. Batch (a) model only (eval/crops)" />
+
+            <Button
+                android:id="@+id/button_batch_b"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="4. Batch (b) given mask (eval/photos + masks)" />
+
+            <CheckBox
+                android:id="@+id/check_save_crops"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Batch: also save the 224 x 224 crops (PNG)" />
+
+            <Button
+                android:id="@+id/button_cancel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:text="Stop" />
+
+            <TextView
+                android:id="@+id/log_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:fontFamily="monospace"
+                android:textColor="@color/black"
+                android:textIsSelectable="true"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
